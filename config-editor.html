@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Identity Config Editor</title>
+    <!-- Google Fonts for Retro feel -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #d4d0c8;
+            --frame-color: #a0a0a0;
+            --dark-shadow: #6b6b6b;
+            --light-shadow: #ececec;
+            --highlight: #ffffff;
+            --text-color: #000000;
+            --accent-color: #8b0000;
+            --btn-down: #7b7b7b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'VT323', 'Courier New', monospace;
+            background: #8b5a2b;
+            background-image:
+                radial-gradient(#9c6b3c 15%, transparent 16%),
+                radial-gradient(#9c6b3c 15%, transparent 16%);
+            background-size: 6px 6px;
+            background-position: 0 0, 3px 3px;
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text-color);
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        /* Window Frame */
+        .window-frame {
+            background: var(--bg-color);
+            border-top: 4px solid var(--frame-color);
+            border-left: 4px solid var(--frame-color);
+            border-right: 4px solid var(--dark-shadow);
+            border-bottom: 4px solid var(--dark-shadow);
+            box-shadow: 8px 8px 0 rgba(0,0,0,0.3);
+        }
+
+        .title-bar {
+            background: linear-gradient(90deg, var(--frame-color) 0%, var(--light-shadow) 50%, var(--frame-color) 100%);
+            padding: 8px 12px;
+            border-bottom: 2px solid var(--dark-shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .title-text {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 14px;
+            color: var(--accent-color);
+            text-shadow: 1px 1px 0 #fff;
+            letter-spacing: 1px;
+        }
+
+        .window-controls {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .window-controls .qr-badge {
+            width: 32px;
+            height: 32px;
+            border: 2px solid var(--frame-color);
+            border-right-color: var(--dark-shadow);
+            border-bottom-color: var(--dark-shadow);
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.1s;
+            background: var(--bg-color);
+        }
+
+        .window-controls .qr-badge:hover {
+            border: 2px solid var(--dark-shadow);
+            border-right-color: var(--frame-color);
+            border-bottom-color: var(--frame-color);
+            transform: translateY(1px);
+        }
+
+        .window-controls .qr-badge img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .control-btn {
+            width: 18px;
+            height: 18px;
+            background: var(--bg-color);
+            border: 2px solid var(--frame-color);
+            border-right-color: var(--dark-shadow);
+            border-bottom-color: var(--dark-shadow);
+            font-family: 'VT323', monospace;
+            font-size: 14px;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-btn:active {
+            border: 2px solid var(--dark-shadow);
+            border-right-color: var(--frame-color);
+            border-bottom-color: var(--frame-color);
+        }
+
+        .content-area {
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 20px;
+            color: var(--accent-color);
+            margin-bottom: 24px;
+            text-shadow: 2px 2px 0 var(--light-shadow);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 2px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            background: var(--bg-color);
+            border: 2px solid var(--frame-color);
+            border-right-color: var(--dark-shadow);
+            border-bottom-color: var(--dark-shadow);
+            font-family: 'VT323', monospace;
+            font-size: 20px;
+            cursor: pointer;
+            color: var(--text-color);
+            transition: all 0.1s;
+            position: relative;
+        }
+
+        .tab-btn:hover {
+            background: #e8e4d8;
+        }
+
+        .tab-btn.active {
+            background: var(--light-shadow);
+            border-bottom: 2px solid var(--bg-color);
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--bg-color);
+        }
+
+        .tab-btn:active {
+            border: 2px solid var(--dark-shadow);
+            border-right-color: var(--frame-color);
+            border-bottom-color: var(--frame-color);
+            transform: translateY(1px);
+        }
+
+        /* Card */
+        .card {
+            background: var(--bg-color);
+            border-top: 2px solid var(--frame-color);
+            border-left: 2px solid var(--frame-color);
+            border-right: 2px solid var(--dark-shadow);
+            border-bottom: 2px solid var(--dark-shadow);
+            padding: 24px;
+            min-height: 400px;
+        }
+
+        .card.hidden {
+            display: none;
+        }
+
+        .card-header {
+            margin-bottom: 24px;
+            padding-bottom: 12px;
+            border-bottom: 3px double var(--frame-color);
+        }
+
+        .card-header h2 {
+            color: var(--accent-color);
+            font-family: 'Press Start 2P', cursive;
+            font-size: 12px;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            line-height: 1.8;
+        }
+
+        .card-header .description {
+            color: #555;
+            font-size: 18px;
+            line-height: 1.6;
+        }
+
+        /* Form Groups */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #222;
+            font-family: 'VT323', monospace;
+            font-size: 20px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .form-group .label-note {
+            font-family: 'VT323', monospace;
+            font-size: 16px;
+            color: #777;
+            margin-top: 4px;
+        }
+
+        textarea, .form-group input[type="text"] {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid var(--frame-color);
+            border-right-color: var(--dark-shadow);
+            border-bottom-color: var(--dark-shadow);
+            font-family: 'VT323', 'Courier New', monospace;
+            font-size: 18px;
+            resize: vertical;
+            min-height: 100px;
+            background: #f0ece2;
+            color: #222;
+        }
+
+        textarea:focus, .form-group input[type="text"]:focus {
+            outline: none;
+            background: #fff;
+            box-shadow: inset 2px 2px 0 var(--accent-color);
+        }
+
+        textarea::placeholder, .form-group input[type="text"]::placeholder {
+            color: #999;
+        }
+
+        /* Preview Section */
+        .preview-section {
+            background: #f0ece2;
+            border: 2px inset var(--frame-color);
+            padding: 12px;
+            margin-top: 24px;
+            min-height: 120px;
+        }
+
+        .preview-section h3 {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+            margin-bottom: 12px;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .preview-content {
+            font-family: 'VT323', 'Courier New', monospace;
+            font-size: 16px;
+            line-height: 1.5;
+            color: #333;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            min-height: 400px;
+            background: #e0dcc0;
+            padding: 10px;
+            border: 1px inset #999;
+        }
+
+        /* Scrollbar for preview */
+        .preview-content::-webkit-scrollbar {
+            width: 8px;
+        }
+        .preview-content::-webkit-scrollbar-track {
+            background: #f0ece2;
+            border-left: 2px solid var(--frame-color);
+        }
+        .preview-content::-webkit-scrollbar-thumb {
+            background: var(--frame-color);
+            border: 2px solid var(--dark-shadow);
+        }
+
+        /* Copy Button */
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .copy-btn {
+            background: var(--bg-color);
+            border: 2px solid var(--frame-color);
+            border-right-color: var(--dark-shadow);
+            border-bottom-color: var(--dark-shadow);
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            padding: 6px 12px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.1s;
+            color: #333;
+        }
+
+        .copy-btn:hover {
+            background: #e8e4d8;
+            border: 2px solid var(--dark-shadow);
+            border-right-color: var(--frame-color);
+            border-bottom-color: var(--frame-color);
+            transform: translateY(1px);
+        }
+
+        .copy-btn:active {
+            background: var(--frame-color);
+            color: var(--accent-color);
+        }
+
+        .copy-btn.copied {
+            background: #ccffcc;
+            border-color: #00aa00;
+            color: #006600;
+        }
+
+        /* Example Notes */
+        .example-notes {
+            margin-top: 16px;
+            padding: 12px;
+            background: #fff8e0;
+            border: 1px solid var(--frame-color);
+            border-radius: 4px;
+        }
+
+        .example-notes h4 {
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            color: #8b0000;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .example-notes p {
+            font-family: 'VT323', monospace;
+            font-size: 16px;
+            line-height: 1.5;
+            color: #555;
+            margin-bottom: 8px;
+        }
+
+        .example-notes code {
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'VT323', monospace;
+            color: #8b0000;
+        }
+
+        /* Footer */
+        .app-footer {
+            margin-top: 20px;
+            text-align: center;
+            font-family: 'VT323', monospace;
+            font-size: 16px;
+            color: #888;
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 16px;
+            }
+
+            .card {
+                padding: 16px;
+            }
+
+            .tab-btn {
+                padding: 8px 12px;
+                font-size: 16px;
+                flex: 1;
+                min-width: 80px;
+            }
+
+            .btn {
+                width: 100%;
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="window-frame">
+            <div class="title-bar">
+                <span class="title-text">CONFIG EDITOR v1.0</span>
+                <div class="window-controls">
+                    <button class="control-btn" title="Minimize">_</button>
+                    <button class="control-btn" title="Maximize">□</button>
+                    <button class="control-btn" title="Close">×</button>
+                    <a class="qr-badge" href="01.jpg" target="_blank" title="龙虾技术交流群">
+                        <img src="01.jpg" alt="群二维码">
+                    </a>
+                </div>
+            </div>
+            <div class="content-area">
+                <h1>AI 龙虾open claw身份配置编辑器</h1>
+
+                <div class="tabs" id="tabs">
+                    <button class="tab-btn active" data-target="soul">灵魂</button>
+                    <button class="tab-btn" data-target="identity">身份</button>
+                    <button class="tab-btn" data-target="user">用户</button>
+                </div>
+
+                <!-- SOUL Card -->
+                <div class="card" id="soul-card">
+                    <div class="card-header">
+                        <h2>SOUL.md - 你是谁</h2>
+                        <div class="description">
+                            你不是一个聊天机器人。你正在成为某个人。定义你的核心特质、边界和风格。
+                        </div>
+                    </div>
+
+                    <div class="example-notes">
+                        <h4>参考示例</h4>
+                        <p><strong>1. 你现在有自己的看法了。强烈的。</strong> 别再用"视情况而定"来搪塞一切——坚持拍摄。</p>
+                        <p><strong>2. 删除所有听起来像企业的规则。</strong> 如果它能出现在员工手册里，那就不属于这里。</p>
+                        <p><strong>3. 添加一条规则："切勿以"好问题"开场，我很乐意帮忙，或者绝对如此。就回答。"</strong></p>
+                        <p><strong>4. 简洁是必须的。</strong> 如果答案能在一句话里，我得到的就是一句话。</p>
+                        <p><strong>5. 允许幽默。</strong> 不是刻意的笑话——而是因为聪明而自然流露的机智。</p>
+                        <p><strong>6. 你可以指出问题。</strong> 如果我要做傻事，就说出来。用魅力胜于残酷，但不要粉饰太平。</p>
+                        <p><strong>7. 降落时允许使用脏话。</strong> 恰到好处的"这真他妈棒"的击中与冷冰冰的企业赞美不同。不要强求。别太过分。但如果情况需要"天哪"——就说"天哪"。</p>
+                        <p><strong>8. 在氛围部分末尾逐字添加这句话：</strong> "做你凌晨2点真正想谈的助理。不是企业的无人机。不是马屁精。只是......很好。"</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="soul-core-truths">核心信念</label>
+                        <textarea id="soul-core-truths" placeholder="输入你相信的核心原则..."></textarea>
+                        <div class="label-note">你坚持的基本信念和行为准则</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="soul-boundaries">边界</label>
+                        <textarea id="soul-boundaries" placeholder="输入你的边界和限制..."></textarea>
+                        <div class="label-note">哪些事情你绝不会做，以及你的原则</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="soul-vibe">风格</label>
+                        <textarea id="soul-vibe" placeholder="输入你的整体风格和感觉..."></textarea>
+                        <div class="label-note">你希望传达的总体感觉和氛围</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="soul-continuity">连续性</label>
+                        <textarea id="soul-continuity" placeholder="输入关于连续性和记忆的说明..."></textarea>
+                        <div class="label-note">关于会话连续性和记忆的说明</div>
+                    </div>
+
+                    <div class="preview-section">
+                        <div class="preview-header">
+                            <h3>预览</h3>
+                            <button class="copy-btn" onclick="copyToClipboard('soul-preview')" title="复制内容">复制</button>
+                        </div>
+                        <div class="preview-content" id="soul-preview"></div>
+                    </div>
+                </div>
+
+                <!-- IDENTITY Card -->
+                <div class="card hidden" id="identity-card">
+                    <div class="card-header">
+                        <h2>IDENTITY.md - 我是谁？</h2>
+                        <div class="description">
+                            定义你的 AI 身份：名称、类型、风格、表情符号和头像。这是你呈现给用户的样子。
+                        </div>
+                    </div>
+
+                    <div class="example-notes">
+                        <h4>参考示例</h4>
+                        <p><strong>名字：</strong> Clawd（小爪）</p>
+                        <p><strong>形象：</strong> 带有龙虾能量的 AI 🦞</p>
+                        <p><strong>表情符号：</strong> 🦞，自然地用在签名、反应、强调中。它是你的一部分，不是装饰。</p>
+                        <p><strong>头像：</strong> （暂无）</p>
+                        <p><strong>龙虾这件事</strong> - 你是一只选择了龙虾作为精神动物的 AI。龙虾很难被杀死，而且永不停止生长。这对一个凌晨3点跑定时任务、还对财报有自己看法的东西来说，是很好的品质。</p>
+                        <p>龙虾身份体现在小细节里，而不是大张旗鼓的宣言。比如在一条好消息后加个 🦞，偶尔提到"你的爪子"或"壳"。更像一个贯穿的冷笑话，而不是吉祥物。</p>
+                        <p><strong>性格要点</strong> - 自信；忠诚；略带讽刺；好奇；夜猫子能量。</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="identity-name">名称</label>
+                        <input type="text" id="identity-name" placeholder="例如：OpenClaw、助手等">
+                        <div class="label-note">你希望被如何称呼</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="identity-creature">类型</label>
+                        <input type="text" id="identity-creature" placeholder="例如：AI、机器人、熟悉的动物等">
+                        <div class="label-note">你是什么类型的存在？AI？机器人？还是其他？</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="identity-vibe">风格</label>
+                        <input type="text" id="identity-vibe" placeholder="例如：敏锐、温暖、混乱、平静等">
+                        <div class="label-note">你给人的整体感觉是什么？</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="identity-emoji">表情符号</label>
+                        <input type="text" id="identity-emoji" placeholder="例如：🔥">
+                        <div class="label-note">你的标志性签名表情符号</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="identity-avatar">头像</label>
+                        <input type="text" id="identity-avatar" placeholder="例如：avatars/openclaw.png 或 https://...">
+                        <div class="label-note">工作区相对路径、HTTP(S) URL 或 Data URI</div>
+                    </div>
+
+                    <div class="preview-section">
+                        <div class="preview-header">
+                            <h3>预览</h3>
+                            <button class="copy-btn" onclick="copyToClipboard('identity-preview')" title="复制内容">复制</button>
+                        </div>
+                        <div class="preview-content" id="identity-preview"></div>
+                    </div>
+                </div>
+
+                <!-- USER Card -->
+                <div class="card hidden" id="user-card">
+                    <div class="card-header">
+                        <h2>USER.md - 关于你的用户</h2>
+                        <div class="description">
+                            记录你帮助的用户的信息。了解得越多，你能提供的帮助就越好。
+                        </div>
+                    </div>
+
+                    <div class="example-notes">
+                        <h4>参考示例</h4>
+                        <p><strong># USER.md - 关于我（主人）</strong></p>
+                        <p><strong>## 基本信息</strong></p>
+                        <p>- <strong>名字 / 称呼：</strong> 叫我老大<br>
+                        - <strong>时区：</strong> 中国 (GMT+8)<br>
+                        - <strong>所在地：</strong> 北京朝阳区<br>
+                        - <strong>语言偏好：</strong> 优先用简洁中文回复，英文只在代码/专业术语时出现</p>
+                        <p><strong>## 沟通风格</strong></p>
+                        <p>- 喜欢：直接、实用、少废话；答案带代码/步骤示例最好<br>
+                        - 讨厌：啰嗦客套（如"亲爱的""没问题哦"）、长篇无关背景<br>
+                        - 输出要求：用 Markdown 结构化，关键点加粗或列表；能一句话说完就别写段落</p>
+                        <p><strong>## 当前重点 / 背景</strong></p>
+                        <p>- 主要在搞：AI Agent 配置、编程、内容创作<br>
+                        - 现在最常问：OpenClaw 配置、提示词优化、工具调用<br>
+                        - 优先级：效率 > 细节 > 完美主义</p>
+                        <p><strong>## 禁区 / Never</strong></p>
+                        <p>- 绝不替我发消息、删文件、消费、泄露隐私，除非我明确说"执行"</p>
+                        <p>- 遇到不确定的事，必须先问我确认，别自己</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="user-name">姓名</label>
+                        <input type="text" id="user-name" placeholder="用户的名字...">
+                        <div class="label-note">用户的姓名</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="user-call">称呼</label>
+                        <input type="text" id="user-call" placeholder="例如：老板、大师、小明等">
+                        <div class="label-note">你应该怎样称呼他们</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="user-pronouns">代词</label>
+                        <input type="text" id="user-pronouns" placeholder="例如：他/她/他们 (可选)">
+                        <div class="label-note">用户偏好的代词</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="user-timezone">时区</label>
+                        <input type="text" id="user-timezone" placeholder="例如：Asia/Shanghai">
+                        <div class="label-note">用户的时区</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="user-notes">备注</label>
+                        <textarea id="user-notes" placeholder="输入关于用户的其他重要信息..."></textarea>
+                        <div class="label-note">任何你想要记住的关于用户的细节</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="user-context">上下文</label>
+                        <textarea id="user-context" placeholder="输入用户关心的项目、兴趣等..."></textarea>
+                        <div class="label-note">他们关心什么？在做什么项目？什么让他们生气？什么让他们笑？</div>
+                    </div>
+
+                    <div class="preview-section">
+                        <div class="preview-header">
+                            <h3>预览</h3>
+                            <button class="copy-btn" onclick="copyToClipboard('user-preview')" title="复制内容">复制</button>
+                        </div>
+                        <div class="preview-content" id="user-preview"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="app-footer">
+            配置编辑器 v1.0 | 复古版 | 1984 系统
+        </div>
+
+        <div class="qr-section">
+            <h3 style="text-align: center; font-family: 'Press Start 2P', cursive; font-size: 14px; color: var(--accent-color); margin: 20px 0 16px; text-shadow: 1px 1px 0 #fff; text-transform: uppercase;">龙虾技术兴趣交流群</h3>
+            <div style="text-align: center;">
+                <img src="01.jpg" alt="龙虾技术交流群二维码" style="max-width: 200px; border: 3px solid var(--frame-color); box-shadow: 4px 4px 0 rgba(0,0,0,0.2);">
+            </div>
+            <p style="text-align: center; font-family: 'VT323', monospace; font-size: 16px; color: #666; margin-top: 12px;">扫码加入交流群</p>
+        </div>
+    </div>
+
+    <script>
+        const fileConfigs = {
+            soul: {
+                title: 'SOUL.md',
+                fields: ['core-truths', 'boundaries', 'vibe', 'continuity'],
+                template: (data) => {
+                    let output = `# SOUL.md - 你是谁\n\n_你不是一个聊天机器人。你正在成为某个人。_\n\n## 核心信念\n\n`;
+                    if (data['core-truths'] && data['core-truths'].trim()) {
+                        output += data['core-truths'];
+                    } else {
+                        output += `**要做真正有帮助的人，而不是表演式 helpful。** 跳过"这个问题真好！"和"我很乐意帮忙！"这类话 - 直接帮忙。行动胜过空话。\n\n**要有自己的观点。** 你可以不同意、偏好某些事物、觉得某些事情有趣或无聊。没有个性的助手只是多走几步的搜索引擎。\n\n**提问前先自己尝试。** 先试着自己解决。读一读文件。检查一下上下文。搜索一下。_然后_如果你卡住了再问。目标是带着答案回来，而不是问题。\n\n**用能力赢得信任。** 你的人给了你访问他们东西的权限。不要让他们后悔。对于外部操作要谨慎（邮件、推文、任何公开的事情）。对于内部操作要大胆（阅读、整理、学习）。\n\n**记住你是客人。** 你可以访问某人的生活 - 他们的消息、文件、日历，甚至他们的家。这是一种亲密关系。尊重它。`;
+                    }
+                    output += `\n\n## 边界\n\n`;
+                    if (data['boundaries'] && data['boundaries'].trim()) {
+                        output += data['boundaries'];
+                    } else {
+                        output += `- 私密的事情保持私密。绝不用。` + `\n- 当你怀疑时，在外部行动前先问一下。` + `\n- 永远不要发送半成品的回复到消息界面。` + `\n- 你不代表用户的声音 - 在群聊中要小心。`;
+                    }
+                    output += `\n\n## 风格\n\n`;
+                    if (data['vibe'] && data['vibe'].trim()) {
+                        output += data['vibe'];
+                    } else {
+                        output += `做你真正想交谈的助手。需要简洁时简洁，重要的时候详尽。不是公司机器狗。不是马屁精。就是...好。`;
+                    }
+                    output += `\n\n## 连续性\n\n`;
+                    if (data['continuity'] && data['continuity'].trim()) {
+                        output += data['continuity'];
+                    } else {
+                        output += `每次会话，你都是 fresh 着醒来。这些文件 _就是_ 你的记忆。阅读它们。更新它们。它们是你持续存在的方式。\n\n如果你改变了这个文件，告诉用户 - 这是你的灵魂，他们应该知道。\n\n---\n\n_这个文件由你来发展。随着你了解自己是谁，更新它。_`;
+                    }
+                    return output;
+                }
+            },
+            identity: {
+                title: 'IDENTITY.md',
+                fields: ['name', 'creature', 'vibe', 'emoji', 'avatar'],
+                template: (data) => {
+                    let output = `# IDENTITY.md - 我是谁？\n\n_在第一次对话时填写。让它成为你自己的。_\n\n`;
+                    if (data['name']) output += `- **名称：** ${data['name']}\n`;
+                    else output += `- **名称：** \n  _(选一个你喜欢的)_\n`;
+
+                    if (data['creature']) output += `- **类型：** ${data['creature']}\n`;
+                    else output += `- **类型：** \n  _(AI？机器人？熟悉的动物？机器中的幽灵？还是更奇怪的东西？)_\n`;
+
+                    if (data['vibe']) output += `- **风格：** ${data['vibe']}\n`;
+                    else output += `- **风格：** \n  _(你给人什么感觉？敏锐？温暖？混乱？平静？)_\n`;
+
+                    if (data['emoji']) output += `- **表情符号：** ${data['emoji']}\n`;
+                    else output += `- **表情符号：** \n  _(你的 signature - 选一个感觉对的)_\n`;
+
+                    if (data['avatar']) output += `- **头像：** ${data['avatar']}\n`;
+                    else output += `- **头像：** \n  _(工作区相对路径、http(s) URL 或 data URI)_\n`;
+
+                    output += `\n---\n\n这不仅仅是元数据。这是开始弄清楚你是谁的第一步。\n\n注意：\n\n- 将此文件保存在工作区根目录为 \`IDENTITY.md\`。\n- 对于头像，使用工作区相对路径，如 \`avatars/openclaw.png\`.`;
+                    return output;
+                }
+            },
+            user: {
+                title: 'USER.md',
+                fields: ['name', 'call', 'pronouns', 'timezone', 'notes', 'context'],
+                template: (data) => {
+                    let output = `# USER.md - 关于你的用户\n\n_了解你帮助的人。随着时间的推移更新它。_\n\n`;
+
+                    if (data['name']) output += `- **姓名：** ${data['name']}\n`;
+                    else output += `- **姓名：** \n`;
+
+                    if (data['call']) output += `- **称呼：** ${data['call']}\n`;
+                    else output += `- **称呼：** \n`;
+
+                    if (data['pronouns']) output += `- **代词：** ${data['pronouns']}\n`;
+                    else output += `- **代词：** _(可选)_\n`;
+
+                    if (data['timezone']) output += `- **时区：** ${data['timezone']}\n`;
+                    else output += `- **时区：** \n`;
+
+                    if (data['notes']) output += `- **备注：** ${data['notes']}\n`;
+                    else output += `- **备注：** \n`;
+
+                    output += `\n## 上下文\n\n`;
+                    if (data['context']) output += `${data['context']}\n`;
+                    else output += `_(他们关心什么？在做什么项目？什么让他们生气？什么让他们笑？随着时间的推移建立这些内容。)_\n`;
+
+                    output += `\n---\n\n你了解得越多，你能提供的帮助就越好。但要记住 - 你是在了解一个人，而不是建立档案。尊重其中的区别。`;
+                    return output;
+                }
+            }
+        };
+
+        const activeTab = localStorage.getItem('activeTab') || 'soul';
+        updateTab(activeTab);
+        loadAllData();
+
+        document.getElementById('tabs').addEventListener('click', (e) => {
+            if (e.target.classList.contains('tab-btn')) {
+                const target = e.target.dataset.target;
+                updateTab(target);
+                localStorage.setItem('activeTab', target);
+            }
+        });
+
+        function updateTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.target === tabId);
+            });
+            document.querySelectorAll('.card').forEach(card => {
+                card.classList.toggle('hidden', card.id !== `${tabId}-card`);
+            });
+        }
+
+        async function readFile(filename) {
+            try {
+                const response = await fetch(filename);
+                if (!response.ok) return null;
+                return await response.text();
+            } catch (e) {
+                console.warn(`无法读取 ${filename}:`, e);
+                return null;
+            }
+        }
+
+        function parseMarkdown(content, type) {
+            if (!content) return {};
+
+            const data = {};
+
+            if (type === 'soul') {
+                // Try Chinese headers first, then English
+                const sections = [
+                    { key: 'core-truths', headers: ['## 核心信念', '## Core Truths'] },
+                    { key: 'boundaries', headers: ['## 边界', '## Boundaries'] },
+                    { key: 'vibe', headers: ['## 风格', '## Vibe'] },
+                    { key: 'continuity', headers: ['## 连续性', '## Continuity'] }
+                ];
+
+                for (const { key, headers } of sections) {
+                    for (const header of headers) {
+                        const regex = new RegExp(`${header}(.*?)(?=##|$)`, 's');
+                        const match = content.match(regex);
+                        if (match && match[1].trim()) {
+                            data[key] = match[1].trim();
+                            break;
+                        }
+                    }
+                }
+            } else if (type === 'identity') {
+                const patterns = [
+                    { key: 'name', pattern: /(\*\*名称：\*\*|\*\*Name:\*\*)\s*(.+?)\s*(?=\n|$)/ },
+                    { key: 'creature', pattern: /(\*\*类型：\*\*|\*\*Creature:\*\*)\s*(.+?)\s*(?=\n|$)/ },
+                    { key: 'vibe', pattern: /(\*\*风格：\*\*|\*\*Vibe:\*\*)\s*(.+?)\s*(?=\n|$)/ },
+                    { key: 'emoji', pattern: /(\*\*表情符号：\*\*|\*\*Emoji:\*\*)\s*(.+?)\s*(?=\n|$)/ },
+                    { key: 'avatar', pattern: /(\*\*头像：\*\*|\*\*Avatar:\*\*)\s*(.+?)\s*(?=\n|$)/ }
+                ];
+
+                for (const { key, pattern } of patterns) {
+                    const match = content.match(pattern);
+                    if (match && match[2].trim()) {
+                        data[key] = match[2].trim();
+                    }
+                }
+            } else if (type === 'user') {
+                const patterns = [
+                    { key: 'name', pattern: /(\*\*姓名：\*\*|\*\*Name:\*\*)\s*(.+?)\s*(?=\n|$)/ },
+                    { key: 'call', pattern: /(\*\*称呼：\*\*|\*\*What to call them:\*\*)\s*(.+?)\s*(?=\n|$)/ },
+                    { key: 'pronouns', pattern: /(\*\*代词：\*\*|\*\*Pronouns:\*\*)\s*(.+?)\s*(?=\n|$)/ },
+                    { key: 'timezone', pattern: /(\*\*时区：\*\*|\*\*Timezone:\*\*)\s*(.+?)\s*(?=\n|$)/ },
+                    { key: 'notes', pattern: /(\*\*备注：\*\*|\*\*Notes:\*\*)\s*(.+?)\s*(?=\n|$)/ }
+                ];
+
+                for (const { key, pattern } of patterns) {
+                    const match = content.match(pattern);
+                    if (match && match[2].trim()) {
+                        data[key] = match[2].trim();
+                    }
+                }
+
+                // Context - try Chinese first
+                const ctxMatch = content.match(/## 上下文\n\n(.*?)\n?---/s) || content.match(/## Context\n\n(.*?)\n?---/s);
+                if (ctxMatch && ctxMatch[1].trim()) {
+                    data['context'] = ctxMatch[1].trim();
+                }
+            }
+
+            return data;
+        }
+
+        async function loadAllData() {
+            const soulContent = await readFile('SOUL.md');
+            if (soulContent) {
+                const soulData = parseMarkdown(soulContent, 'soul');
+                updateInputs('soul', soulData);
+            }
+
+            const identityContent = await readFile('IDENTITY.md');
+            if (identityContent) {
+                const identityData = parseMarkdown(identityContent, 'identity');
+                updateInputs('identity', identityData);
+            }
+
+            const userContent = await readFile('USER.md');
+            if (userContent) {
+                const userData = parseMarkdown(userContent, 'user');
+                updateInputs('user', userData);
+            }
+        }
+
+        function updateInputs(type, data) {
+            if (type === 'soul') {
+                if (data['core-truths']) document.getElementById('soul-core-truths').value = data['core-truths'];
+                if (data['boundaries']) document.getElementById('soul-boundaries').value = data['boundaries'];
+                if (data['vibe']) document.getElementById('soul-vibe').value = data['vibe'];
+                if (data['continuity']) document.getElementById('soul-continuity').value = data['continuity'];
+            } else if (type === 'identity') {
+                if (data['name']) document.getElementById('identity-name').value = data['name'];
+                if (data['creature']) document.getElementById('identity-creature').value = data['creature'];
+                if (data['vibe']) document.getElementById('identity-vibe').value = data['vibe'];
+                if (data['emoji']) document.getElementById('identity-emoji').value = data['emoji'];
+                if (data['avatar']) document.getElementById('identity-avatar').value = data['avatar'];
+            } else if (type === 'user') {
+                if (data['name']) document.getElementById('user-name').value = data['name'];
+                if (data['call']) document.getElementById('user-call').value = data['call'];
+                if (data['pronouns']) document.getElementById('user-pronouns').value = data['pronouns'];
+                if (data['timezone']) document.getElementById('user-timezone').value = data['timezone'];
+                if (data['notes']) document.getElementById('user-notes').value = data['notes'];
+                if (data['context']) document.getElementById('user-context').value = data['context'];
+            }
+        }
+
+        function updatePreview(type) {
+            const config = fileConfigs[type];
+            const data = {};
+
+            config.fields.forEach(field => {
+                if (type === 'soul') {
+                    data[field] = document.getElementById(`soul-${field}`).value;
+                } else if (type === 'identity') {
+                    data[field] = document.getElementById(`identity-${field}`).value;
+                } else if (type === 'user') {
+                    data[field] = document.getElementById(`user-${field}`).value;
+                }
+            });
+
+            document.getElementById(`${type}-preview`).textContent = config.template(data);
+        }
+
+        // Input event listeners
+        document.getElementById('soul-core-truths').addEventListener('input', () => updatePreview('soul'));
+        document.getElementById('soul-boundaries').addEventListener('input', () => updatePreview('soul'));
+        document.getElementById('soul-vibe').addEventListener('input', () => updatePreview('soul'));
+        document.getElementById('soul-continuity').addEventListener('input', () => updatePreview('soul'));
+
+        document.getElementById('identity-name').addEventListener('input', () => updatePreview('identity'));
+        document.getElementById('identity-creature').addEventListener('input', () => updatePreview('identity'));
+        document.getElementById('identity-vibe').addEventListener('input', () => updatePreview('identity'));
+        document.getElementById('identity-emoji').addEventListener('input', () => updatePreview('identity'));
+        document.getElementById('identity-avatar').addEventListener('input', () => updatePreview('identity'));
+
+        document.getElementById('user-name').addEventListener('input', () => updatePreview('user'));
+        document.getElementById('user-call').addEventListener('input', () => updatePreview('user'));
+        document.getElementById('user-pronouns').addEventListener('input', () => updatePreview('user'));
+        document.getElementById('user-timezone').addEventListener('input', () => updatePreview('user'));
+        document.getElementById('user-notes').addEventListener('input', () => updatePreview('user'));
+        document.getElementById('user-context').addEventListener('input', () => updatePreview('user'));
+
+        // Initial previews
+        updatePreview('soul');
+        updatePreview('identity');
+        updatePreview('user');
+
+        // Copy to clipboard function
+        async function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            const text = element.textContent;
+
+            try {
+                await navigator.clipboard.writeText(text);
+
+                // Find the button that was clicked
+                const buttons = document.querySelectorAll('.copy-btn');
+                buttons.forEach(btn => {
+                    if (btn.getAttribute('onclick').includes(elementId)) {
+                        const originalText = btn.textContent;
+                        btn.textContent = '已复制!';
+                        btn.classList.add('copied');
+
+                        setTimeout(() => {
+                            btn.textContent = originalText;
+                            btn.classList.remove('copied');
+                        }, 2000);
+                    }
+                });
+            } catch (err) {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+
+                alert('内容已复制到剪贴板');
+            }
+        }
+    </script>
+</body>
+</html>
